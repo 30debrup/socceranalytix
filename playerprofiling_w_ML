@@ -1,0 +1,57 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.neighbors import NearestNeighbors
+from soccerplots.radar_chart import Radar
+
+# Load the dataset
+df = pd.read_csv('C:\\Users\\ACER\\Desktop\\exptdata.csv')
+df.head
+df['Name'] = df['Name'].str.split('\\', expand=True)[0]
+
+# Select the player you want to compare
+selected_player_name = 'Marcos Llorente'  # Change to the player's name you want to select
+
+# Filter the DataFrame to include only the selected player
+selected_player_df = df[df['Name'] == selected_player_name].reset_index()
+
+# Define the radar chart parameters and values for the selected player
+params = list(selected_player_df.columns)[6:]
+values = selected_player_df[params].values.tolist()[0]  # Extract the values as a list
+
+# Create a "dummy" player with average statistics
+average_stats_player = df[params].mean().tolist()
+
+# Initialize the radar chart
+ranges = [(float(min(df[param])) - 0.25 * float(min(df[param])), float(max(df[param])) + 0.25 * float(max(df[param]))) for param in params]
+radar = Radar(label_color="black", range_color="black", label_fontsize=7.3, range_fontsize=6.5)
+
+# Define the title and endnote
+
+title = {
+    'title_name': selected_player_name,
+    'title_color': '#363FF5',
+ #   'subtitle_name': closest_player_name,  # Change to the actual team name
+    'subtitle_color': '#363FF5',
+    'title_fontsize': 18,
+    'subtitle_fontsize': 15
+}
+# Plot the radar chart for the selected player and the "dummy" player
+fig, ax = radar.plot_radar(ranges=ranges, params=params, values=[values, average_stats_player],
+                           radar_color=['#363FF5', 'gray'], alphas=[.67, .6],
+                           title=title,  compare=True)
+
+knn = NearestNeighbors(n_neighbors=10)  # Find the three nearest players (excluding the selected player)
+knn.fit(df[params])
+distances, indices = knn.kneighbors([values])  # Note the change here - wrap values in a list
+
+# Get the names of the three closest players
+closest_player_indices = indices[0][1:]  # Exclude the first index which is the selected player
+closest_player_names = df.loc[closest_player_indices, 'Name']
+
+# Print the names of the three closest players
+print(f"The ten closest players to {selected_player_name} are:")
+for player_name in closest_player_names:
+    print(player_name)
+
+
+# You can now visualize the radar chart for the closest player in a similar way
